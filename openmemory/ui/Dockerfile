@@ -41,8 +41,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 COPY --chown=nextjs:nodejs entrypoint.sh /home/nextjs/entrypoint.sh
 RUN chmod +x /home/nextjs/entrypoint.sh
+RUN sed -i 's/\r$//' /home/nextjs/entrypoint.sh
 
 USER nextjs
+ENV NEXT_PUBLIC_API_URL="http://openmemory-mcp:8765"
+ENV NEXT_PUBLIC_USER_ID=root
 
 EXPOSE 3000
 ENV PORT=3000

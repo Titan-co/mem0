@@ -20,14 +20,14 @@ help:
 	@echo "  make ui        - Install dependencies and start the frontend in production mode"
 
 env:
-	cd api && cp .env.example .env
-	cd ui && cp .env.example .env
+	cd api && copy .env.example .env
+	cd ui && copy .env.example .env
 
 build:
 	docker compose build
 
 up:
-	NEXT_PUBLIC_USER_ID=$(USER) NEXT_PUBLIC_API_URL=$(NEXT_PUBLIC_API_URL) docker compose up
+	docker compose up
 
 down:
 	docker compose down -v

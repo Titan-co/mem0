@@ -33,6 +33,25 @@ import datetime
 from app.utils.permissions import check_memory_access_permissions
 from qdrant_client import models as qdrant_models
 
+from mcp.server.session import ServerSession
+
+####################################################################################
+# Temporary monkeypatch which avoids crashing when a POST message is received
+# before a connection has been initialized, e.g: after a deployment.
+# pylint: disable-next=protected-access
+old__received_request = ServerSession._received_request
+async def _received_request(self, *args, **kwargs):
+    try:
+        return await old__received_request(self, *args, **kwargs)
+    except RuntimeError as e:
+        if "Received request before initialization was complete" in str(e):
+            logging.warning("MCP: Suppressed 'Received request before initialization was complete' error.")
+            pass # Suppress only this specific RuntimeError
+        else:
+            raise # Re-raise other RuntimeErrors
+# pylint: disable-next=protected-access
+ServerSession._received_request = _received_request
+####################################################################################
 # Load environment variables
 load_dotenv()
 

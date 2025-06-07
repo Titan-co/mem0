@@ -1,17 +1,21 @@
 import json
 import logging
-
-from openai import OpenAI
 from typing import List
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_exponential
 from app.utils.prompts import MEMORY_CATEGORIZATION_PROMPT
+import os
 
 load_dotenv()
 
-openai_client = OpenAI()
+# Set SSL certificate path for Docker environment
+os.environ.setdefault('SSL_CERT_FILE', '/etc/ssl/certs/ca-certificates.crt')
 
+# Use a function to get OpenAI client to delay initialization
+def get_openai_client():
+    from openai import OpenAI
+    return OpenAI()
 
 class MemoryCategories(BaseModel):
     categories: List[str]
@@ -21,17 +25,23 @@ class MemoryCategories(BaseModel):
 def get_categories_for_memory(memory: str) -> List[str]:
     """Get categories for a memory."""
     try:
-        response = openai_client.responses.parse(
+        client = get_openai_client()
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
-            instructions=MEMORY_CATEGORIZATION_PROMPT,
-            input=memory,
+            messages=[
+                {"role": "system", "content": MEMORY_CATEGORIZATION_PROMPT},
+                {"role": "user", "content": memory}
+            ],
             temperature=0,
-            text_format=MemoryCategories,
+            response_format={"type": "json_object"}
         )
-        response_json =json.loads(response.output[0].content[0].text)
+        response_content = response.choices[0].message.content
+        if not response_content:
+            raise ValueError("Empty response from OpenAI API")
+            
+        response_json = json.loads(response_content)
         categories = response_json['categories']
-        categories = [cat.strip().lower() for cat in categories]
-        # TODO: Validate categories later may be
-        return categories
+        return [cat.strip().lower() for cat in categories]
     except Exception as e:
-        raise e
+        logging.error(f"Error categorizing memory: {e}")
+        raise
