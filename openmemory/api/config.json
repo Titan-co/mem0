@@ -13,11 +13,11 @@
             }
         },
         "embedder": {
-            "provider": "deepseek",
+            "provider": "qwen",
             "config": {
-                "model": "deepseek-embed",
-                "api_key": "env:DEEPSEEK_API_KEY",
-                "base_url": "https://api.deepseek.com",
+                "model": "text-embedding-v4",
+                "api_key": "env:QWEN_API_KEY",
+                "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
                 "http_client": {
                     "verify": false
                 }
